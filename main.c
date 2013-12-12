@@ -1,15 +1,26 @@
-#ifdef _MSC_VER
-/*
- * we do not want the warnings about the old deprecated and unsecure CRT functions
- * since these examples can be compiled under *nix as well
- */
-#define _CRT_SECURE_NO_WARNINGS
-#endif
 
-#include "WpdPack/Include/pcap.h"
+#include "pcap.h"
 
-/* prototype of the packet handler */
-void packet_handler(u_char *param, const struct pcap_pkthdr *header, const u_char *pkt_data);
+/* Callback function invoked by libpcap for every incoming packet */
+void packet_handler(u_char *param, const struct pcap_pkthdr *header, const u_char *pkt_data)
+{
+	struct tm *ltime;
+	char timestr[16];
+	time_t local_tv_sec;
+
+	/*
+	 * unused parameters
+	 */
+	(VOID)(param);
+	(VOID)(pkt_data);
+
+	/* convert the timestamp to readable format */
+	local_tv_sec = header->ts.tv_sec;
+	ltime=localtime(&local_tv_sec);
+	strftime( timestr, sizeof timestr, "%H:%M:%S", ltime);
+
+	printf("%s,%.6ld len:%d\n", timestr, header->ts.tv_usec, header->len);
+}
 
 int main()
 {
@@ -83,27 +94,4 @@ int main()
 
 	pcap_close(adhandle);
 	return 0;
-}
-
-
-/* Callback function invoked by libpcap for every incoming packet */
-void packet_handler(u_char *param, const struct pcap_pkthdr *header, const u_char *pkt_data)
-{
-	struct tm *ltime;
-	char timestr[16];
-	time_t local_tv_sec;
-
-	/*
-	 * unused parameters
-	 */
-	(VOID)(param);
-	(VOID)(pkt_data);
-
-	/* convert the timestamp to readable format */
-	local_tv_sec = header->ts.tv_sec;
-	ltime=localtime(&local_tv_sec);
-	strftime( timestr, sizeof timestr, "%H:%M:%S", ltime);
-
-	printf("%s,%.6d len:%d\n", timestr, header->ts.tv_usec, header->len);
-
 }
