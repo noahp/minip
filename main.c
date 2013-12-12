@@ -8,18 +8,25 @@ void packet_handler(u_char *param, const struct pcap_pkthdr *header, const u_cha
 	char timestr[16];
 	time_t local_tv_sec;
 
-	/*
-	 * unused parameters
-	 */
+	// unused parameters
 	(VOID)(param);
 	(VOID)(pkt_data);
 
-	/* convert the timestamp to readable format */
+	// convert the timestamp to readable format
 	local_tv_sec = header->ts.tv_sec;
 	ltime=localtime(&local_tv_sec);
 	strftime( timestr, sizeof timestr, "%H:%M:%S", ltime);
 
 	printf("%s,%.6ld len:%d\n", timestr, header->ts.tv_usec, header->len);
+
+	// print out the packet contents
+	{
+	    uint32_t i;
+	    printf("\n");
+	    for(i=0; i<header->len; i++){
+            printf("%02X", pkt_data[i]);
+	    }
+	}
 }
 
 int main()
@@ -32,24 +39,23 @@ int main()
 	char errbuf[PCAP_ERRBUF_SIZE];
 
 	/* Retrieve the device list */
-	if(pcap_findalldevs(&alldevs, errbuf) == -1)
-	{
+	if(pcap_findalldevs(&alldevs, errbuf) == -1){
 		fprintf(stderr,"Error in pcap_findalldevs: %s\n", errbuf);
 		exit(1);
 	}
 
 	/* Print the list */
-	for(d=alldevs; d; d=d->next)
-	{
+	for(d=alldevs; d; d=d->next){
 		printf("%d. %s", ++i, d->name);
-		if (d->description)
+		if (d->description){
 			printf(" (%s)\n", d->description);
-		else
+		}
+		else{
 			printf(" (No description available)\n");
+		}
 	}
 
-	if(i==0)
-	{
+	if(i==0){
 		printf("\nNo interfaces found! Make sure WinPcap is installed.\n");
 		return -1;
 	}
@@ -57,8 +63,7 @@ int main()
 	printf("Enter the interface number (1-%d):",i);
 	scanf("%d", &inum);
 
-	if(inum < 1 || inum > i)
-	{
+	if(inum < 1 || inum > i){
 		printf("\nInterface number out of range.\n");
 		/* Free the device list */
 		pcap_freealldevs(alldevs);
@@ -76,8 +81,7 @@ int main()
 							 1,				// promiscuous mode (nonzero means promiscuous)
 							 1000,			// read timeout
 							 errbuf			// error buffer
-							 )) == NULL)
-	{
+							 )) == NULL){
 		fprintf(stderr,"\nUnable to open the adapter. %s is not supported by WinPcap\n", d->name);
 		/* Free the device list */
 		pcap_freealldevs(alldevs);
@@ -93,5 +97,6 @@ int main()
 	pcap_loop(adhandle, 0, packet_handler, NULL);
 
 	pcap_close(adhandle);
+
 	return 0;
 }
